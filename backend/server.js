@@ -1,20 +1,37 @@
 // backend/server.js — Compatible con Vercel (serverless) y servidor local
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
-const express = require('express');
-const cors    = require('cors');
-const path    = require('path');
+const express   = require('express');
+const cors      = require('cors');
+const path      = require('path');
+const helmet    = require('helmet');
+const rateLimit = require('express-rate-limit');
 const { testConnection } = require('./config/db');
 
 const app  = express();
 const PORT = process.env.PORT || 3131;
 
 // ── Middlewares ───────────────────────────────────────
-// En producción (Vercel), el dominio del frontend es el mismo → '*' está bien.
-// Para mayor seguridad se puede restringir a process.env.FRONTEND_URL.
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting — protege contra fuerza bruta
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Intenta en 15 minutos.' }
+});
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Demasiados intentos de login. Intenta en 15 minutos.' }
+});
+app.use('/api/', limiter);
+app.use('/api/auth/login', authLimiter);
 
 // ── Rutas API ────────────────────────────────────────
 app.use('/api/auth',           require('./routes/auth.routes'));

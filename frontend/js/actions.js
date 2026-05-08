@@ -129,7 +129,7 @@ async function validarFormulaIA() {
 }
 
 async function generarFormula() {
-  const pac      = document.getElementById('f-pac')?.value?.trim() || 'Paciente';
+  const pac      = document.getElementById('f-pac')?.value?.trim() || '';
   const dx       = (document.getElementById('f-dx')?.value || '').trim();
   const obs      = document.getElementById('f-obs')?.value?.trim() || '';
   const entrega  = document.getElementById('f-entrega')?.value || 'domicilio';
@@ -146,9 +146,22 @@ async function generarFormula() {
   const alergia = meds.find(m => ALERGIAS.some(a => m.nombre.toLowerCase().includes(a)));
   if (alergia) { toast('err', '🚨 BLOQUEADO', `"${alergia.nombre}" está en la lista de alergias. No se puede prescribir.`); return; }
 
+  // Resolver paciente_id: buscar por nombre entre pacientes o usar usuario actual
+  let paciente_id = App.user.id;
+  if (pac && pac.length > 2) {
+    try {
+      const usuarios = await ApiUsuarios.getAll().catch(() => []);
+      const found = usuarios.find(u =>
+        u.rol === 'paciente' &&
+        (u.nombre + ' ' + u.apellido).toLowerCase().includes(pac.toLowerCase())
+      );
+      if (found) paciente_id = found.id;
+    } catch(_) {}
+  }
+
   try {
     await ApiFormulas.create({
-      paciente_id:  'u1', // En producción vendría del selector de paciente
+      paciente_id,
       diagnostico:  dx,
       observaciones: obs,
       tipo_entrega: entrega,

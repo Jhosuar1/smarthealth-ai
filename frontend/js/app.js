@@ -777,3 +777,128 @@ function confirmarRecepcionAdmin(id){ App.confirmarRecepcionAdmin(id); }
 //  ARRANCAR
 // ══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => App.init());
+
+// ── MODO OSCURO ──────────────────────────────────────────────────
+function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (isDark) {
+    document.documentElement.removeAttribute('data-theme');
+    document.getElementById('dark-btn').textContent = '🌙';
+    localStorage.setItem('theme', 'light');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('dark-btn').textContent = '☀️';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+
+// Restaurar tema al cargar
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    const btn = document.getElementById('dark-btn');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+
+// ── EXPORTAR FÓRMULA A PDF ───────────────────────────────────────
+async function exportarFormulaPDF(formulaId) {
+  try {
+    const fms = await ApiFormulas.getAll().catch(() => []);
+    const f   = fms.find(x => x.id === formulaId);
+    if (!f) { toast('warn', '⚠️', 'Fórmula no encontrada'); return; }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+    // Header azul
+    doc.setFillColor(0, 87, 255);
+    doc.rect(0, 0, 210, 35, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SmartHealth AI', 15, 14);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Sistema Integral de Gestión en Salud · Pereira, Colombia', 15, 21);
+    doc.text('FÓRMULA MÉDICA ELECTRÓNICA', 15, 28);
+
+    // Hash y fecha
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Código: ' + (f.hash || f.id), 15, 44);
+    doc.text('Fecha: ' + (f.creado_en?.slice(0,10) || new Date().toISOString().slice(0,10)), 130, 44);
+
+    // Línea separadora
+    doc.setDrawColor(200, 200, 200);
+    doc.line(15, 48, 195, 48);
+
+    // Datos del paciente y médico
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DATOS DEL PACIENTE', 15, 56);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Nombre: ' + (f.paciente_nombre || 'Paciente'), 15, 63);
+    doc.text('Diagnóstico (CIE-10): ' + (f.diagnostico || '—'), 15, 69);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('MÉDICO PRESCRIPTOR', 110, 56);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Farmacia: ' + (f.farmacia || 'Cruz Verde'), 110, 63);
+    doc.text('Entrega: ' + (f.tipo_entrega || 'domicilio'), 110, 69);
+
+    // Línea
+    doc.line(15, 74, 195, 74);
+
+    // Medicamentos
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('MEDICAMENTOS PRESCRITOS', 15, 81);
+
+    const meds = (f.medicamentos || []).filter(Boolean);
+    let y = 89;
+    meds.forEach((m, i) => {
+      doc.setFillColor(240, 244, 248);
+      doc.rect(15, y - 5, 180, 14, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text((i+1) + '. ' + (m.nombre || ''), 18, y + 1);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text('Dosis: ' + (m.dosis || '—') + '   Duración: ' + (m.duracion || '—'), 18, y + 6);
+      y += 18;
+    });
+
+    // Observaciones
+    if (f.observaciones) {
+      y += 4;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('OBSERVACIONES:', 15, y);
+      doc.setFont('helvetica', 'normal');
+      const lines = doc.splitTextToSize(f.observaciones, 175);
+      doc.text(lines, 15, y + 6);
+      y += 6 + lines.length * 5;
+    }
+
+    // Footer
+    doc.setFillColor(240, 244, 248);
+    doc.rect(0, 270, 210, 27, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Documento generado digitalmente por SmartHealth AI · Válido con firma electrónica del prescriptor', 15, 278);
+    doc.text('Este documento tiene validez legal según la Resolución 1995/1999 del Ministerio de Salud de Colombia', 15, 284);
+    doc.text('Verificación: smarthealth-ai.vercel.app/verificar/' + (f.hash || f.id), 15, 290);
+
+    doc.save('formula-' + (f.hash || f.id) + '.pdf');
+    toast('ok', '📄 PDF generado', 'Fórmula descargada correctamente');
+  } catch(e) {
+    toast('err', '❌ Error', 'No se pudo generar el PDF: ' + e.message);
+    console.error(e);
+  }
+}

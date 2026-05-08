@@ -339,8 +339,8 @@ async prescribir() {
     <div class="card">
       <div class="card-h"><span>📋</span><div class="card-title">Fórmulas emitidas por mí</div></div>
       <div class="card-b card-b-flush">
-        <table class="tbl"><thead><tr><th>ID</th><th>Paciente</th><th>Diagnóstico</th><th>Fecha</th><th>Estado</th></tr></thead>
-        <tbody>${fms.map(f=>`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:10px">${f.hash}</td><td>${f.paciente_nombre||'Paciente'}</td><td>${f.diagnostico}</td><td>${f.creado_en?.slice(0,10)}</td><td><span class="badge ${estadoClass(f.estado)}">${f.estado}</span></td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--t3)">Sin fórmulas emitidas</td></tr>'}</tbody>
+        <table class="tbl"><thead><tr><th>ID</th><th>Paciente</th><th>Diagnóstico</th><th>Fecha</th><th>Estado</th><th>PDF</th></tr></thead>
+        <tbody>${fms.map(f=>`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:10px">${f.hash}</td><td>${f.paciente_nombre||'Paciente'}</td><td>${f.diagnostico}</td><td>${f.creado_en?.slice(0,10)}</td><td><span class="badge ${estadoClass(f.estado)}">${f.estado}</span></td><td><button class="btn btn-outline btn-sm" onclick="exportarFormulaPDF('${f.id}')">📄 PDF</button></td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--t3)">Sin fórmulas emitidas</td></tr>'}</tbody>
         </table>
       </div>
     </div>
@@ -505,12 +505,10 @@ async admin() {
     </div>
     <div class="g2">
       <div class="card">
-        <div class="card-h"><span>📊</span><div class="card-title">Monitoreo del sistema</div></div>
+        <div class="card-h"><span>📊</span><div class="card-title">Estadísticas del sistema</div></div>
         <div class="card-b">
-          ${[['CPU','23%',23,'green'],['RAM','48%',48,'green'],['Storage','35%',35,'green'],['API req/min','1,240',62,'blue']].map(([l,v,p,c])=>`
-          <div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${l}</span><span style="font-weight:600">${v}</span></div>
-          <div class="inv-bar"><div class="inv-fill" style="width:${p}%;background:var(--${c})"></div></div></div>`).join('')}
-          <div style="padding:10px;background:var(--green-l);border-radius:8px;display:flex;gap:8px;align-items:center">
+          <canvas id="chart-estados" height="160"></canvas>
+          <div style="padding:10px;background:var(--green-l);border-radius:8px;display:flex;gap:8px;align-items:center;margin-top:12px">
             <span>✅</span><div><div style="font-weight:700;font-size:13px;color:#065f46">Todos los servicios operativos</div><div style="font-size:11px;color:#047857">API · PostgreSQL · IA · Leaflet</div></div>
           </div>
         </div>
@@ -528,7 +526,43 @@ async admin() {
       <div class="card" style="cursor:pointer" onclick="nav('inventario')"><div class="card-b" style="text-align:center;padding:20px"><div style="font-size:32px">📦</div><div style="font-weight:700;margin-top:8px">Inventario</div><div style="font-size:12px;color:var(--t3)">${noStock} sin stock</div></div></div>
       <div class="card" style="cursor:pointer" onclick="nav('auditoria')"><div class="card-b" style="text-align:center;padding:20px"><div style="font-size:32px">🔍</div><div style="font-weight:700;margin-top:8px">Auditoría</div><div style="font-size:12px;color:var(--t3)">${logs.length} eventos</div></div></div>
     </div>
-  </div>`;
+  </div>
+  <script>
+  (function(){
+    const citasPorEstado = {
+      'Activas': ${citas.filter(c=>c.estado==='activa').length},
+      'Completadas': ${citas.filter(c=>c.estado==='completada').length},
+      'Canceladas': ${citas.filter(c=>c.estado==='cancelada').length},
+    };
+    const fmsPorEstado = {
+      'Pendiente': ${fms.filter(f=>f.estado==='pendiente').length},
+      'En camino': ${fms.filter(f=>f.estado==='en_camino').length},
+      'Entregado': ${fms.filter(f=>f.estado==='entregado').length},
+    };
+    setTimeout(() => {
+      const ctx = document.getElementById('chart-estados');
+      if (ctx && window.Chart) {
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: [...Object.keys(citasPorEstado).map(k=>'Citas: '+k), ...Object.keys(fmsPorEstado).map(k=>'Fórmulas: '+k)],
+            datasets: [{
+              label: 'Cantidad',
+              data: [...Object.values(citasPorEstado), ...Object.values(fmsPorEstado)],
+              backgroundColor: ['#60a5fa','#34d399','#f87171','#fbbf24','#818cf8','#2dd4bf'],
+              borderRadius: 6,
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          }
+        });
+      }
+    }, 100);
+  })();
+  </script>\`;
 },
 
 // ─── LOGÍSTICA ───────────────────────────────────────────────────
