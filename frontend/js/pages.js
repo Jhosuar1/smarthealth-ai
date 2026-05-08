@@ -548,6 +548,7 @@ async admin() {
     }
   }, 200);
   return html;
+},
 
 // ─── LOGÍSTICA ───────────────────────────────────────────────────
 async logistica() {
