@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartHealth AI</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <!-- Fuentes -->
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Leaflet (mapa) -->
+  <link  rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- jsPDF para exportar fórmulas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Chart.js para gráficas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <!-- Estilos propios -->
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     PANTALLA DE AUTENTICACIÓN
+════════════════════════════════════════════ -->
+<div id="auth">
+  <div class="auth-card">
+
+    <div class="auth-brand">
+      <div class="auth-brand-ic">🏥</div>
+      <h1>SmartHealth AI</h1>
+      <p>Sistema Integral de Gestión en Salud · Pereira, Colombia</p>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab on" onclick="showAuthPanel('login',this)">Iniciar sesión</button>
+      <button class="auth-tab"    onclick="showAuthPanel('register',this)">Registrarse</button>
+      <button class="auth-tab"    onclick="showAuthPanel('forgot',this)">¿Olvidé contraseña?</button>
+    </div>
+
+    <div id="auth-err" class="auth-err"></div>
+    <div id="auth-ok"  class="auth-ok"></div>
+
+    <!-- LOGIN -->
+    <div id="panel-login" class="auth-panel on">
+      <div class="auth-field">
+        <label class="auth-label">Correo electrónico</label>
+        <input id="l-email" class="auth-input" type="email" placeholder="correo@ejemplo.com" onkeydown="if(event.key==='Enter')App.doLogin()">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Contraseña</label>
+        <input id="l-pass" class="auth-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')App.doLogin()">
+      </div>
+      <button class="auth-btn" onclick="App.doLogin()">Entrar al sistema →</button>
+      <div class="auth-demos">
+        <p class="auth-demos-label">Acceso rápido de demostración</p>
+        <div class="demo-grid">
+          <span class="demo-label">Selecciona un rol de prueba:</span>
+          <button class="demo-btn" onclick="quickDemo('paciente')">🧑 Paciente</button>
+          <button class="demo-btn" onclick="quickDemo('medico')">🩺 Médico</button>
+          <button class="demo-btn" onclick="quickDemo('farmacia')">💊 Farmacéutico</button>
+          <button class="demo-btn" onclick="quickDemo('admin')">⚙️ Admin</button>
+          <button class="demo-btn demo-super" onclick="quickDemo('superadmin')">⭐ Superadmin</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTRO -->
+    <div id="panel-register" class="auth-panel">
+      <div class="auth-row-2">
+        <div class="auth-field">
+          <label class="auth-label">Nombre</label>
+          <input id="r-nom" class="auth-input" type="text" placeholder="Tu nombre">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Apellido</label>
+          <input id="r-ape" class="auth-input" type="text" placeholder="Tu apellido">
+        </div>
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Correo electrónico</label>
+        <input id="r-email" class="auth-input" type="email" placeholder="correo@ejemplo.com">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Contraseña</label>
+        <input id="r-pass" class="auth-input" type="password" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Tipo de cuenta</label>
+        <select id="r-rol" class="auth-input" onchange="toggleRegFields()">
+          <option value="paciente">🧑 Paciente</option>
+          <option value="medico">🩺 Médico / Profesional de salud</option>
+          <option value="farmacia">💊 Farmacéutico</option>
+        </select>
+      </div>
+      <div id="r-extra" class="auth-field" style="display:none">
+        <label class="auth-label">N° Registro profesional</label>
+        <input id="r-reg" class="auth-input" type="text" placeholder="Ej: TP-12345-COL">
+      </div>
+      <div class="auth-check-row">
+        <input id="r-habeas" type="checkbox">
+        <label for="r-habeas">Acepto el tratamiento de mis datos según la <a href="#" onclick="showHabeasModal(event)">Ley 1581 de 2012 (Habeas Data)</a></label>
+      </div>
+      <button class="auth-btn" onclick="App.doRegister()">Crear cuenta →</button>
+    </div>
+
+    <!-- RECUPERAR CONTRASEÑA -->
+    <div id="panel-forgot" class="auth-panel">
+      <div class="auth-forgot-header">
+        <div class="auth-forgot-icon">🔐</div>
+        <p>Ingresa tu correo y recibirás un código en tu Gmail para restablecer tu contraseña.</p>
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Correo registrado</label>
+        <input id="f-email" class="auth-input" type="email" placeholder="correo@ejemplo.com">
+      </div>
+      <button class="auth-btn" id="btn-send-code" onclick="sendRecoveryCode()">📬 Enviar código al correo →</button>
+      <div id="recovery-box" class="auth-recovery-box" style="display:none">
+        <div class="auth-recovery-title">✅ Código enviado — revisa tu Gmail o spam</div>
+        <div class="auth-field" style="margin-top:12px">
+          <label class="auth-label">Código de recuperación</label>
+          <input id="f-code" class="auth-input auth-mono" type="text" placeholder="Ej: A7-F3" maxlength="8">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Nueva contraseña</label>
+          <input id="f-newpass" class="auth-input" type="password" placeholder="Mínimo 6 caracteres">
+        </div>
+        <button class="auth-btn" style="background:var(--green)" onclick="doPasswordReset()">Cambiar contraseña →</button>
+      </div>
+    </div>
+
+  </div><!-- /.auth-card -->
+</div><!-- /#auth -->
+
+
+<!-- ════════════════════════════════════════════
+     APLICACIÓN PRINCIPAL
+════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="tb-brand">
+      <div class="tb-ic">🏥</div>
+      <div>
+        <div class="tb-title">SmartHealth AI</div>
+        <div class="tb-sub">Pereira, Colombia</div>
+      </div>
+    </div>
+    <div class="tb-sep"></div>
+    <div class="tb-user">
+      <div class="tb-av" id="tb-av">?</div>
+      <div>
+        <div class="tb-uname" id="tb-name">—</div>
+        <div class="tb-urole" id="tb-role">—</div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <div class="live"><div class="live-dot"></div>Sistema activo</div>
+      <button class="dark-toggle" onclick="toggleDarkMode()" id="dark-btn" title="Modo oscuro">🌙</button>
+      <button class="tb-icon-btn" onclick="nav('notificaciones')" title="Notificaciones">
+        🔔<div class="notif-badge" id="notif-badge"></div>
+      </button>
+      <button class="tb-icon-btn" onclick="nav('asistente')" title="Asistente IA">🤖</button>
+      <button class="tb-logout" onclick="App.doLogout()">Salir →</button>
+    </div>
+  </header>
+
+  <!-- Body -->
+  <div class="app-body">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main-scroll">
+      <div class="content" id="main-content"></div>
+    </main>
+  </div>
+
+</div><!-- /#app -->
+
+
+<!-- ════════════════════════════════════════════
+     MODALES
+════════════════════════════════════════════ -->
+
+<!-- Agendar cita -->
+<div class="overlay" id="m-agendar">
+  <div class="modal">
+    <div class="modal-h"><span>📅</span><div class="modal-title">Agendar nueva cita médica</div><button class="modal-close" onclick="closeModal('m-agendar')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><div>
+        <label class="form-label">Motivo / Síntomas</label>
+        <textarea id="a-motivo" class="form-input" placeholder="Describe detalladamente tus síntomas o motivo de consulta..."></textarea>
+      </div></div>
+      <div class="form-row fr-2">
+        <div><label class="form-label">Especialidad</label>
+          <select id="a-esp" class="form-input">
+            <option>Medicina General</option><option>Cardiología</option>
+            <option>Endocrinología</option><option>Pediatría</option>
+            <option>Dermatología</option><option>Neurología</option>
+          </select>
+        </div>
+        <div><label class="form-label">Modalidad</label>
+          <select id="a-mod" class="form-input"><option>Presencial</option><option>Virtual</option></select>
+        </div>
+      </div>
+      <div class="form-row"><div>
+        <label class="form-label">Centro médico preferido</label>
+        <select id="a-centro" class="form-input">
+          <option>Hospital San Jorge — 4.2 km</option>
+          <option>Clínica Los Rosales — 2.8 km</option>
+          <option>Centro de Salud Cuba — 1.1 km (más cercano)</option>
+          <option>Clínica Comfamiliar — 3.0 km</option>
+        </select>
+      </div></div>
+      <div id="ai-pri-wrap" style="display:none">
+        <label class="form-label">Evaluación de prioridad (IA)</label>
+        <div class="ai-result" id="ai-pri-result"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost"   onclick="closeModal('m-agendar')">Cancelar</button>
+      <button class="btn btn-outline" onclick="evaluarPrioridad()">🤖 Evaluar prioridad</button>
+      <button class="btn btn-primary" onclick="confirmarCita()">Confirmar cita →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generar fórmula -->
+<div class="overlay" id="m-formula">
+  <div class="modal modal-wide">
+    <div class="modal-h"><span>✍️</span><div class="modal-title">Fórmula Médica Electrónica</div><button class="modal-close" onclick="closeModal('m-formula')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row fr-2">
+        <div><label class="form-label">Paciente</label><select id="f-pac" class="form-input"><option value="">Cargando pacientes…</option></select></div>
+        <div><label class="form-label">Diagnóstico (CIE-10)</label><input id="f-dx" class="form-input" type="text" placeholder="Ej: I10 — Hipertensión arterial"></div>
+      </div>
+      <div id="meds-container"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addMedRow()" style="margin-bottom:12px">+ Agregar medicamento</button>
+      <div class="form-row"><div>
+        <label class="form-label">Observaciones</label>
+        <textarea id="f-obs" class="form-input" placeholder="Instrucciones de uso, alertas..."></textarea>
+      </div></div>
+      <div class="form-row fr-2">
+        <div><label class="form-label">Tipo de entrega</label>
+          <select id="f-entrega" class="form-input">
+            <option value="domicilio">Domicilio (geolocalización)</option>
+            <option value="retiro">Recoge en farmacia</option>
+          </select>
+        </div>
+        <div><label class="form-label">Farmacia asignada</label>
+          <select id="f-farmacia" class="form-input">
+            <option>Cruz Verde</option><option>Comfamiliar</option><option>La Rebaja</option>
+          </select>
+        </div>
+      </div>
+      <div id="ai-formula-wrap" style="display:none">
+        <div class="ai-result" id="ai-formula-result"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost"   onclick="closeModal('m-formula')">Cancelar</button>
+      <button class="btn btn-outline" onclick="validarFormulaIA()">🤖 Validar con IA</button>
+      <button class="btn btn-success" onclick="generarFormula()">✅ Firmar y enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detalle de cita -->
+<div class="overlay" id="m-cita-detalle">
+  <div class="modal modal-sm">
+    <div class="modal-h"><span>📋</span><div class="modal-title">Detalle de cita</div><button class="modal-close" onclick="closeModal('m-cita-detalle')">✕</button></div>
+    <div class="modal-body" id="cita-detalle-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="cancelarCitaActual()">Cancelar cita</button>
+      <button class="btn btn-outline"       onclick="closeModal('m-cita-detalle')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Inventario: agregar / editar -->
+<div class="overlay" id="m-inv">
+  <div class="modal">
+    <div class="modal-h"><span>📦</span><div class="modal-title" id="m-inv-title">Agregar medicamento</div><button class="modal-close" onclick="closeModal('m-inv')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row fr-2">
+        <div><label class="form-label">Nombre</label><input id="inv-nom" class="form-input" type="text" placeholder="Ej: Losartán Potásico"></div>
+        <div><label class="form-label">Presentación</label><input id="inv-pres" class="form-input" type="text" placeholder="Ej: 50mg × 30 tab"></div>
+      </div>
+      <div class="form-row fr-3">
+        <div><label class="form-label">Stock actual</label><input id="inv-stock" class="form-input" type="number" min="0" value="0"></div>
+        <div><label class="form-label">Stock mínimo</label><input id="inv-min" class="form-input" type="number" min="0" value="20"></div>
+        <div><label class="form-label">Farmacia</label>
+          <select id="inv-farm" class="form-input">
+            <option>Cruz Verde</option><option>Comfamiliar</option><option>La Rebaja</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row fr-2">
+        <div><label class="form-label">Precio (COP)</label><input id="inv-precio" class="form-input" type="number" min="0" value="0"></div>
+        <div><label class="form-label">Vencimiento (lote)</label><input id="inv-vence" class="form-input" type="date"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost"   onclick="closeModal('m-inv')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarInventario()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Calificar entrega -->
+<div class="overlay" id="m-rating">
+  <div class="modal modal-sm">
+    <div class="modal-h"><span>⭐</span><div class="modal-title">Calificar entrega</div><button class="modal-close" onclick="closeModal('m-rating')">✕</button></div>
+    <div class="modal-body" style="text-align:center">
+      <p style="font-size:13px;color:var(--t3);margin-bottom:14px">¿Cómo fue tu experiencia con la entrega?</p>
+      <div class="star-rating" id="star-rating" style="justify-content:center">
+        <span class="star" onclick="setStar(1)">⭐</span>
+        <span class="star" onclick="setStar(2)">⭐</span>
+        <span class="star" onclick="setStar(3)">⭐</span>
+        <span class="star" onclick="setStar(4)">⭐</span>
+        <span class="star" onclick="setStar(5)">⭐</span>
+      </div>
+      <p id="star-label" style="font-size:12px;color:var(--t3);margin:8px 0">Selecciona una calificación</p>
+      <textarea id="rating-comment" class="form-input" style="margin-top:6px" placeholder="Comentario opcional..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost"   onclick="closeModal('m-rating')">Omitir</button>
+      <button class="btn btn-primary" onclick="enviarRating()">Enviar calificación</button>
+    </div>
+  </div>
+</div>
+
+<!-- Diálogo de confirmación reutilizable -->
+<div id="confirm-dialog" class="overlay">
+  <div class="modal-content modal-sm">
+    <div class="confirm-box">
+      <div class="confirm-icon" id="conf-icon">⚠️</div>
+      <div class="confirm-title" id="conf-title">¿Estás seguro?</div>
+      <div class="confirm-msg"   id="conf-msg">Esta acción no se puede deshacer.</div>
+      <div class="confirm-actions">
+        <button class="btn btn-outline" onclick="closeConfirm()">Cancelar</button>
+        <button class="btn btn-danger"  id="conf-ok">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tratamiento de Datos (Habeas Data) -->
+<div class="overlay" id="m-habeas">
+  <div class="modal modal-wide">
+    <div class="modal-h">
+      <span>🛡️</span>
+      <div class="modal-title">Política de Tratamiento de Datos Personales (Colombia)</div>
+      <button class="modal-close" onclick="closeModal('m-habeas')">✕</button>
+    </div>
+    <div class="modal-body" style="font-size:13px;line-height:1.6;color:var(--t2);max-height:60vh;overflow-y:auto;padding-right:10px;">
+      <h3 style="color:var(--t1);margin-top:0;font-size:14px;font-family:'Bricolage Grotesque',sans-serif">SmartHealth AI · Autorización de Tratamiento de Datos Sensibles de Salud</h3>
+      <p style="margin-bottom:12px">En cumplimiento de la <strong>Ley 1581 de 2012</strong> (Ley General de Protección de Datos Personales de Colombia), el <strong>Decreto 1377 de 2013</strong> y la <strong>Ley 1438 de 2011</strong> (Garantía de la Calidad en Salud), le informamos que SmartHealth AI opera como Responsable del Tratamiento de sus datos.</p>
+      
+      <h4 style="color:var(--t1);margin:12px 0 6px 0;font-size:13px;font-family:'Bricolage Grotesque',sans-serif">1. Tratamiento de Datos Sensibles (Salud)</h4>
+      <p style="margin-bottom:12px">Por la naturaleza de los servicios médicos que gestiona esta plataforma, procesamos <strong>datos sensibles de salud</strong> (antecedentes médicos, alergias, diagnósticos CIE-10, fórmulas y medicamentos). Bajo el Artículo 6 de la Ley 1581 de 2012:
+        <ul style="margin-left:15px;margin-bottom:12px">
+          <li>Usted <strong>no está obligado</strong> a autorizar el tratamiento de sus datos sensibles.</li>
+          <li>Sin embargo, al tratarse de un sistema interactivo de gestión de salud y fórmulas médicas, la no autorización impedirá la creación del perfil clínico, el agendamiento inteligente y la emisión de fórmulas.</li>
+        </ul>
+      </p>
+
+      <h4 style="color:var(--t1);margin:12px 0 6px 0;font-size:13px;font-family:'Bricolage Grotesque',sans-serif">2. Finalidades del Tratamiento</h4>
+      <p style="margin-bottom:12px">Sus datos serán recopilados, almacenados y procesados exclusivamente para:
+        <ul style="margin-left:15px;margin-bottom:12px">
+          <li>Gestionar su Historia Clínica electrónica.</li>
+          <li>Agendar citas médicas y evaluar su prioridad de urgencia con asistencia de Inteligencia Artificial (IA).</li>
+          <li>Expedir fórmulas médicas electrónicas y gestionar la entrega y stock de medicamentos con farmacias aliadas de Pereira, Risaralda.</li>
+          <li>Enviar notificaciones y recordatorios críticos por SMS, Email y alertas dentro del sistema.</li>
+          <li>Mantener registros de auditoría y control de seguridad de accesos.</li>
+        </ul>
+      </p>
+
+      <h4 style="color:var(--t1);margin:12px 0 6px 0;font-size:13px;font-family:'Bricolage Grotesque',sans-serif">3. Seguridad y Confidencialidad</h4>
+      <p style="margin-bottom:12px">Implementamos estrictas medidas técnicas, humanas y administrativas de seguridad para evitar adulteraciones, pérdidas, consultas abusivas o accesos no autorizados a su información médica.</p>
+
+      <h4 style="color:var(--t1);margin:12px 0 6px 0;font-size:13px;font-family:'Bricolage Grotesque',sans-serif">4. Derechos del Titular</h4>
+      <p style="margin-bottom:12px">Conforme al Artículo 8 de la Ley 1581 de 2012, usted tiene derecho a:
+        <ul style="margin-left:15px;margin-bottom:12px">
+          <li>Conocer, actualizar y rectificar sus datos personales frente a SmartHealth AI.</li>
+          <li>Solicitar prueba de la autorización otorgada.</li>
+          <li>Ser informado respecto del uso dado a sus datos.</li>
+          <li>Presentar quejas ante la Superintendencia de Industria y Comercio (SIC) por infracciones a la ley.</li>
+          <li>Revocar la autorización y/o solicitar la supresión del dato cuando no se respeten los principios, derechos y garantías constitucionales y legales.</li>
+        </ul>
+      </p>
+
+      <p style="border-top:1px solid var(--border);padding-top:12px;font-size:11px;color:var(--t3);margin-top:15px">
+        * Al marcar la casilla de aceptación y registrarse, declara haber leído de manera libre, consciente, previa y expresa esta política y autoriza a SmartHealth AI a realizar el tratamiento de sus datos personales y sensibles de salud bajo estas condiciones.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('m-habeas')">Aceptar y Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div id="toast-area"></div>
+
+
+<!-- ════════════════════════════════════════════
+     SCRIPTS (orden importa)
+════════════════════════════════════════════ -->
+<!-- ORDEN CRÍTICO: cada archivo depende del anterior -->
+<script src="/js/api.js"></script>     <!-- 1. Token, fetch, Auth, Citas, Formulas... -->
+<script src="/js/utils.js"></script>   <!-- 2. toast, confirm, fmtDate, aiSpinner... -->
+<script src="/js/map.js"></script>     <!-- 3. initMap, filterMapPins, scheduleFromMap -->
+<script src="/js/pages.js"></script>   <!-- 4. PAGES.dashboard, PAGES.citas, etc. -->
+<script src="/js/app.js"></script>     <!-- 5. App controller — usa todo lo anterior -->
+  <!-- 4. Lógica de acciones -->
+
+
+<script>
+// ── Puente: funciones globales que el HTML llama sin prefijo App. ──
+
+function quickDemo(rol) {
+  const emails = { paciente:'paciente@demo.com', medico:'medico@demo.com',
+                   farmacia:'farmacia@demo.com', admin:'admin@demo.com', superadmin:'super@demo.com' };
+  const passes = { superadmin:'super123' };
+  document.getElementById('l-email').value = emails[rol];
+  document.getElementById('l-pass').value  = passes[rol] || 'demo123';
+  showAuthPanel('login');
+  setTimeout(() => App.doLogin(), 80);
+}
+
+// Modales — llamados desde onclick en el HTML
+function addMedRow()           { App.addMedRow(); }
+function confirmarCita()       { App.confirmarCita(); }
+function cancelarCitaActual()  { App.cancelarCitaActual(); }
+function evaluarPrioridad()    { App.evaluarPrioridad(); }
+function validarFormulaIA()    { App.validarFormulaIA(); }
+function generarFormula()      { App.generarFormula(); }
+function guardarInventario()   { App.guardarInventario(); }
+function enviarRating()        { App.enviarRating(); }
+function setStar(n)            { App.setStar(n); }
+function sendRecoveryCode()    { App.doSendRecovery(); }
+function doPasswordReset()     { App.doPasswordReset(); }
+function nav(page)             { App.nav(page); }
+function showHabeasModal(e)    { if(e) e.preventDefault(); openModal('m-habeas'); }
+</script>
+</body>
+</html>
