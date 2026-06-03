@@ -18,7 +18,7 @@ Universidad Tecnológica de Pereira — Ingeniería de Sistemas
 
 ```
 smarthealth/
-├── frontend/           ← HTML + CSS + JS (sin frameworks)
+├── frontend/           ← HTML + CSS + JS 
 │   ├── index.html
 │   ├── css/main.css
 │   └── js/
@@ -68,15 +68,15 @@ npm start
 # → http://localhost:3131
 ```
 
-## Desplegar en Vercel + Supabase
+## Desplegar en Vercel + Neon
 
-### 1. Crear la base de datos en Supabase
+### 1. Crear la base de datos en Neon
 
-1. Ir a [supabase.com](https://supabase.com) → crear proyecto gratuito
+1. Ir a [supabase.com](https://neon.com/) → crear proyecto gratuito
 2. En el **SQL Editor** de tu proyecto, copiar y ejecutar el contenido de `database/schema.sql`
 3. Ir a **Settings → Database → Connection string**
 4. Seleccionar **Transaction pooler** (⚠️ importante: usar puerto **6543**, no 5432)
-5. Copiar la URL completa (tiene formato `postgresql://postgres.[ref]:[pass]@aws-0-[region].pooler.supabase.com:6543/postgres`)
+5. Copiar la URL completa
 
 ### 2. Desplegar en Vercel
 
@@ -88,11 +88,13 @@ npm start
 |----------|-------|
 | `DATABASE_URL` | URL del Transaction Pooler de Supabase |
 | `JWT_SECRET` | cadena aleatoria larga (mínimo 32 chars) |
-| `ANTHROPIC_API_KEY` | tu key de Claude (opcional) |
+| `ANTHROPIC_API_KEY` | key de Claude |
+| `OPEN_API_KEY` | key de OpenAI |
+| `GEMINI_API_KEY` | key de GEMINI |
+
 
 4. Click en **Deploy** — listo ✅
 
-> **Nota:** El `vercel.json` ya está configurado para servir el frontend como estático y el backend como serverless. No hay que cambiar nada más.
 
 
 ## Usuarios demo
