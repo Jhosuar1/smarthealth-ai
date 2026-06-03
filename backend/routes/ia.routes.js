@@ -4,8 +4,8 @@ const router  = require('express').Router();
 const https   = require('https');
 const { requireAuth } = require('../middleware/auth');
 
-const OPENAI_MODEL        = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-const OPENAI_VISION_MODEL = process.env.OPENAI_VISION_MODEL || 'gpt-4o-mini';
+const OPENAI_MODEL        = process.env.OPENAI_MODEL || 'gpt-4o';
+const OPENAI_VISION_MODEL = process.env.OPENAI_VISION_MODEL || 'gpt-4o';
 
 const SYSTEM_MESSAGE = `Eres el asistente clínico IA de SmartHealth AI, sistema de gestión en salud de Pereira, Colombia.
 Tienes conocimiento profundo en medicina general, farmacología, CIE-10 y guías clínicas colombianas (Minsalud).
