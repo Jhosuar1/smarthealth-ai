@@ -724,7 +724,7 @@ async asistente() {
     <div class="page-hdr">
       <div>
         <h1>Asistente IA Clínico</h1>
-        <p>Powered by Google Gemini · Incluye análisis de imágenes y documentos médicos</p>
+        <p>Powered by OpenAI · Incluye análisis de imágenes y documentos médicos</p>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <span class="badge bg-green" style="font-size:11px">● IA Activa</span>

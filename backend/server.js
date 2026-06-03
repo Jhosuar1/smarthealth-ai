@@ -45,15 +45,14 @@ app.use('/api/ia',             require('./routes/ia.routes'));
 
 // ── Health check ─────────────────────────────────────
 app.get('/api/health', (req, res) => {
-  const gemini    = process.env.GEMINI_API_KEY    ? 'configurada ✓' : 'NO configurada ✗';
-  const anthropic = process.env.ANTHROPIC_API_KEY ? 'configurada ✓' : 'NO configurada ✗';
+  const openai    = process.env.OPENAI_API_KEY    ? 'configurada ✓' : 'NO configurada ✗';
   const dbUrl     = process.env.DATABASE_URL      ? 'configurada ✓' : 'NO configurada ✗';
   const jwt       = process.env.JWT_SECRET        ? 'configurada ✓' : 'NO configurada ✗';
   res.json({
     status: 'ok',
     env: process.env.NODE_ENV || 'development',
-    variables: { GEMINI_API_KEY: gemini, ANTHROPIC_API_KEY: anthropic, DATABASE_URL: dbUrl, JWT_SECRET: jwt },
-    ia_mode: process.env.GEMINI_API_KEY ? 'gemini-real' : (process.env.ANTHROPIC_API_KEY ? 'claude-real' : 'simulacion-local'),
+    variables: { OPENAI_API_KEY: openai, DATABASE_URL: dbUrl, JWT_SECRET: jwt },
+    ia_mode: process.env.OPENAI_API_KEY ? 'openai-real' : 'sin-configurar',
     time: new Date().toISOString()
   });
 });
@@ -142,7 +141,7 @@ if (process.env.VERCEL !== '1') {
       console.log('├──────────────────────────────────────────────┤');
       console.log(`│  URL:  http://localhost:${PORT}                   │`);
       console.log(`│  DB:   ${dbOk ? '✅ PostgreSQL conectado          ' : '❌ Sin BD (verifica .env)         '}│`);
-      console.log(`│  IA:   ${process.env.ANTHROPIC_API_KEY ? '✅ Claude API activa             ' : '⚠️  Modo simulado (sin API Key)  '}│`);
+      console.log(`│  IA:   ${process.env.OPENAI_API_KEY ? '✅ OpenAI API activa             ' : '⚠️  Sin API Key (IA inactiva)    '}│`);
       console.log('└──────────────────────────────────────────────┘\n');
     });
   };

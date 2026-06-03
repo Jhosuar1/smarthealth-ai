@@ -879,7 +879,7 @@ const App = {
     let r, iaSource = 'local';
     if (hasFile) {
       r = await ApiIA.askWithImage(prompt, this._attachedFile.base64, this._attachedFile.mimeType, 1000);
-      iaSource = 'gemini-vision';
+      iaSource = 'openai-vision';
       this._clearAttach();
     } else {
       const full = await ApiIA.askFull(prompt, 800);
@@ -888,8 +888,8 @@ const App = {
 
     this._chatHistory.push({ role: 'assistant', text: r });
     const el = document.getElementById(thinkId);
-    const srcLabel = iaSource === 'gemini' || iaSource === 'gemini-vision'
-      ? `<div style="font-size:9px;color:var(--green);margin-top:6px;font-weight:700;opacity:.8">✦ Gemini AI</div>`
+    const srcLabel = iaSource === 'openai' || iaSource === 'openai-vision'
+      ? `<div style="font-size:9px;color:var(--green);margin-top:6px;font-weight:700;opacity:.8">✦ OpenAI</div>`
       : ``;  // error o desconocido: no mostrar nada
     if (el) el.innerHTML = `<div class="ai-result">${r}</div>${srcLabel}`;
     msgs.scrollTop = msgs.scrollHeight;

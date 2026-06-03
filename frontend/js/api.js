@@ -97,9 +97,9 @@ const ApiAudit = {
   clear:  () => apiFetch('/auditoria/limpiar', { method:'DELETE' }),
 };
 
-// ─── IA (Claude) ─────────────────────────────────────────────────
+// ─── IA (OpenAI) ─────────────────────────────────────────────────
 const ApiIA = {
-  // Siempre Gemini real. Si falla muestra error claro, nunca simulación.
+  // Siempre OpenAI real. Si falla muestra error claro, nunca simulación.
   ask: (prompt, max_tokens) =>
     apiFetch('/ia/claude', { method:'POST', body:{ prompt, max_tokens: max_tokens || 800 } })
       .then(d => d.text || '— Sin respuesta —')
@@ -107,7 +107,7 @@ const ApiIA = {
 
   askFull: (prompt, max_tokens) =>
     apiFetch('/ia/claude', { method:'POST', body:{ prompt, max_tokens: max_tokens || 800 } })
-      .then(d => ({ text: d.text || '— Sin respuesta —', source: d.source || 'gemini' }))
+      .then(d => ({ text: d.text || '— Sin respuesta —', source: d.source || 'openai' }))
       .catch(err => ({ text: `⚠️ No se pudo conectar con la IA: ${err.message}. Intenta de nuevo.`, source: 'error' })),
 
   askWithImage: (prompt, imageBase64, mimeType, max_tokens) =>
