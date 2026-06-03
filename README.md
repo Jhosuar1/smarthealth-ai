@@ -72,7 +72,7 @@ npm start
 
 ### 1. Crear la base de datos en Neon
 
-1. Ir a [supabase.com](https://neon.com/) → crear proyecto gratuito
+1. Ir a [neon.com](https://neon.com/) → crear proyecto gratuito
 2. En el **SQL Editor** de tu proyecto, copiar y ejecutar el contenido de `database/schema.sql`
 3. Ir a **Settings → Database → Connection string**
 4. Seleccionar **Transaction pooler** (⚠️ importante: usar puerto **6543**, no 5432)
